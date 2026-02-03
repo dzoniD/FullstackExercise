@@ -1,9 +1,11 @@
 import { useState, useRef, useEffect } from "react";
+import { Routes, Route } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Task from "./components/Task.jsx";
+import SignIn from "./routes/login/SignIn.jsx";
 import "./App.css";
 
-function App() {
+function TasksPage() {
   const queryClient = useQueryClient();
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -274,6 +276,16 @@ function App() {
         </div>
       </dialog>
     </div>
+  );
+}
+
+function App() {
+  return (
+    <Routes>
+      <Route path="/" element={<TasksPage />} />
+      <Route path="/tasks" element={<TasksPage />} />
+      <Route path="/signin" element={<SignIn />} />
+    </Routes>
   );
 }
 
