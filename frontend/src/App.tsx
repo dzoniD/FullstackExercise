@@ -1,11 +1,16 @@
 import { useState, useRef, useEffect } from "react";
 import { Routes, Route } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Link } from "react-router-dom";
 import Task from "./components/Task.jsx";
-import SignIn from "./routes/login/SignIn.jsx";
+import SignIn from "./routes/signup/SignIn.jsx";
+import Login from "./routes/login/Login.jsx";
+import { useNavigate } from "react-router-dom";
 import "./App.css";
+import ProtectedRoute from "./routes/ProtectedRoute.js";
 
 function TasksPage() {
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -13,8 +18,13 @@ function TasksPage() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [errors, setErrors] = useState<{ title?: string; description?: string }>({});
+  const [token, setToken] = useState<string | null>(null);
+
 
   useEffect(() => {
+    const storedToken = localStorage.getItem('token');
+    setToken(storedToken);
+
     if (dialogOpen) {
       dialogRef.current?.showModal();
     } else {
@@ -55,17 +65,24 @@ function TasksPage() {
   const { data: count = [], isLoading, isError } = useQuery({
     queryKey: ["tasks"],
     queryFn: async () => {
-      const response = await fetch("http://localhost:8001/tasks");
+
+      const response = await fetch("http://localhost:8004/tasks", {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
       return response.json();
     },
+    enabled: !!token,
   });
 
   const createTaskMutation = useMutation({
     mutationFn: async (newTask: { title: string; description: string }) => {
-      const response = await fetch("http://localhost:8001/tasks", {
+      const response = await fetch("http://localhost:8004/tasks", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
         },
         body: JSON.stringify(newTask),
       });
@@ -92,10 +109,11 @@ function TasksPage() {
 
   const updateTaskMutation = useMutation({
     mutationFn: async ({ id, task }: { id: number; task: { title: string; description: string } }) => {
-      const response = await fetch(`http://localhost:8001/tasks/${id}`, {
+      const response = await fetch(`http://localhost:8004/tasks/${id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
         },
         body: JSON.stringify(task),
       });
@@ -128,6 +146,11 @@ function TasksPage() {
     setDialogOpen(true);
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    navigate("/login");
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex items-center justify-center">
@@ -146,10 +169,16 @@ function TasksPage() {
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 py-8 px-4">
+      <div className="flex justify-end">
+        <Link to="/signin" className="text-blue-500 hover:text-blue-600">Sign in</Link>
+        <Link to="/login" className="text-blue-500 hover:text-blue-600">Log in</Link>
+        <button onClick={handleLogout} className="text-blue-500 hover:text-blue-600">Logout</button>
+        </div>
       <div className="max-w-6xl mx-auto">
         <h1 className="text-4xl font-bold text-gray-800 dark:text-white mb-8 text-center">
           Tiketi
         </h1>
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {count.map((task: any) => (
            <Task key={task.id} task={task} onEdit={handleEditTask} />
@@ -283,8 +312,14 @@ function App() {
   return (
     <Routes>
       <Route path="/" element={<TasksPage />} />
-      <Route path="/tasks" element={<TasksPage />} />
+      <Route path="/tasks" element={
+        <ProtectedRoute>
+            <TasksPage />
+        </ProtectedRoute>
+        } />
       <Route path="/signin" element={<SignIn />} />
+      <Route path="/login" element={<Login />} />
+
     </Routes>
   );
 }
