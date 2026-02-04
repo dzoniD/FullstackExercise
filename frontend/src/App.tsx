@@ -2,12 +2,12 @@ import { useState, useRef, useEffect } from "react";
 import { Routes, Route } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import Task from "./components/Task.jsx";
-import SignIn from "./routes/signup/SignIn.jsx";
-import Login from "./routes/login/Login.jsx";
+import Task from "./components/Task";
+import SignIn from "./routes/signup/SignIn";
+import Login from "./routes/login/Login";
 import { useNavigate } from "react-router-dom";
 import "./App.css";
-import ProtectedRoute from "./routes/ProtectedRoute.js";
+import ProtectedRoute from "./routes/ProtectedRoute";
 
 function TasksPage() {
   const navigate = useNavigate();
@@ -146,10 +146,7 @@ function TasksPage() {
     setDialogOpen(true);
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    navigate("/login");
-  };
+
 
   if (isLoading) {
     return (
@@ -169,11 +166,6 @@ function TasksPage() {
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 py-8 px-4">
-      <div className="flex justify-end">
-        <Link to="/signin" className="text-blue-500 hover:text-blue-600">Sign in</Link>
-        <Link to="/login" className="text-blue-500 hover:text-blue-600">Log in</Link>
-        <button onClick={handleLogout} className="text-blue-500 hover:text-blue-600">Logout</button>
-        </div>
       <div className="max-w-6xl mx-auto">
         <h1 className="text-4xl font-bold text-gray-800 dark:text-white mb-8 text-center">
           Tiketi
@@ -309,8 +301,20 @@ function TasksPage() {
 }
 
 function App() {
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    navigate("/login");
+  };
   return (
-    <Routes>
+    <>
+      <div className="flex justify-end">
+          <Link to="/signin" className="text-blue-500 hover:text-blue-600">Sign in</Link>
+          <Link to="/login" className="text-blue-500 hover:text-blue-600">Log in</Link>
+          <button onClick={handleLogout} className="text-blue-500 hover:text-blue-600">Logout</button>
+      </div>
+      <Routes>
       <Route path="/" element={<TasksPage />} />
       <Route path="/tasks" element={
         <ProtectedRoute>
@@ -319,8 +323,9 @@ function App() {
         } />
       <Route path="/signin" element={<SignIn />} />
       <Route path="/login" element={<Login />} />
-
-    </Routes>
+      </Routes>
+    </>
+    
   );
 }
 

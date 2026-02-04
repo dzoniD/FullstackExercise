@@ -47,11 +47,15 @@ class Token(BaseModel):
 
 @app.get("/tasks")
 def read_tasks(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
-    return db.query(models.Task).all()
+    # Vrati samo taskove koji pripadaju trenutnom korisniku
+    return db.query(models.Task).filter(models.Task.user_id == current_user.id).all()
 
 @app.get("/tasks/{task_id}", tags=["tasks"], summary="Vraća pojedinačni task")
 def read_task(task_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user),):
-    task = db.query(models.Task).filter(models.Task.id == task_id).first()
+    task = db.query(models.Task).filter(
+        models.Task.id == task_id,
+        models.Task.user_id == current_user.id
+    ).first()
     if not task:
         from fastapi import HTTPException
         raise HTTPException(status_code=404, detail="Task nije pronađen")
@@ -59,7 +63,11 @@ def read_task(task_id: int, db: Session = Depends(get_db), current_user: models.
 
 @app.post("/tasks", tags=["tasks"], summary="Kreira novi task")
 def create_task(task: TaskCreate, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user),):
-    new_task = models.Task(title=task.title, description=task.description)
+    new_task = models.Task(
+        title=task.title,
+        description=task.description,
+        user_id=current_user.id
+    )
     db.add(new_task)
     db.commit()
     db.refresh(new_task)
@@ -67,10 +75,13 @@ def create_task(task: TaskCreate, db: Session = Depends(get_db), current_user: m
 
 @app.put("/tasks/{task_id}", tags=["tasks"], summary="Ažurira postojeći task")
 def update_task(task_id: int, task: TaskCreate, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user),):
-    db_task = db.query(models.Task).filter(models.Task.id == task_id).first()
+    db_task = db.query(models.Task).filter(
+        models.Task.id == task_id,
+        models.Task.user_id == current_user.id
+    ).first()
     if not db_task:
         from fastapi import HTTPException
-        raise HTTPException(status_code=404, detail="Task nije pronađen")
+        raise HTTPException(status_code=404, detail="Task not found or does not belong to you")
     
     db_task.title = task.title
     db_task.description = task.description
@@ -97,6 +108,7 @@ def signup(user: UserCreate, db: Session = Depends(get_db)):
 def login(user: UserLogin, db: Session = Depends(get_db)):
     db_user = db.query(models.User).filter(models.User.email == user.email).first()
     if not db_user or not verify_password(user.password, db_user.hashed_password):
+        from fastapi import HTTPException
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
     access_token = create_access_token({"sub": str(db_user.id), "email": db_user.email})
