@@ -5,6 +5,8 @@ import { Link } from "react-router-dom";
 import Task from "./components/Task";
 import SignIn from "./routes/signup/SignIn";
 import Login from "./routes/login/Login";
+import VerifyEmail from "./routes/VerifyEmail";
+
 import { useNavigate } from "react-router-dom";
 import "./App.css";
 import ProtectedRoute from "./routes/ProtectedRoute";
@@ -66,7 +68,7 @@ function TasksPage() {
     queryKey: ["tasks"],
     queryFn: async () => {
 
-      const response = await fetch("http://localhost:8004/tasks", {
+      const response = await fetch("http://localhost:8005/tasks", {
         headers: {
           Authorization: `Bearer ${token}`
         }
@@ -78,7 +80,7 @@ function TasksPage() {
 
   const createTaskMutation = useMutation({
     mutationFn: async (newTask: { title: string; description: string }) => {
-      const response = await fetch("http://localhost:8004/tasks", {
+      const response = await fetch("http://localhost:8005/tasks", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -109,7 +111,7 @@ function TasksPage() {
 
   const updateTaskMutation = useMutation({
     mutationFn: async ({ id, task }: { id: number; task: { title: string; description: string } }) => {
-      const response = await fetch(`http://localhost:8004/tasks/${id}`, {
+      const response = await fetch(`http://localhost:8005/tasks/${id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -323,6 +325,7 @@ function App() {
         } />
       <Route path="/signin" element={<SignIn />} />
       <Route path="/login" element={<Login />} />
+      <Route path="/verify-email" element={<VerifyEmail />} />
       </Routes>
     </>
     

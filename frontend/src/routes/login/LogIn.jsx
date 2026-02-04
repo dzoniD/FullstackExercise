@@ -6,7 +6,7 @@ export default function SignIn() {
   const navigate = useNavigate();
     const logInMutation = useMutation({
         mutationFn: async (newUser) => {
-          const response = await fetch("http://localhost:8004/auth/login", {
+          const response = await fetch("http://localhost:8005/auth/login", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
