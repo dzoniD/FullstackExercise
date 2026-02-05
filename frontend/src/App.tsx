@@ -1,10 +1,11 @@
 import { useState, useRef, useEffect } from "react";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, useLocation } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import Task from "./components/Task";
 import SignIn from "./routes/signup/SignIn";
 import Login from "./routes/login/Login";
+import TaskFilters from "./components/TagFilters";
 import VerifyEmail from "./routes/VerifyEmail";
 
 import { useNavigate } from "react-router-dom";
@@ -19,9 +20,17 @@ function TasksPage() {
   const [editingTask, setEditingTask] = useState<any | null>(null);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  
   const [errors, setErrors] = useState<{ title?: string; description?: string }>({});
   const [token, setToken] = useState<string | null>(null);
+  const { search } = useLocation();
+  const params = new URLSearchParams(search);
 
+
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  
+  const tagsParam = params.get("tags"); // "bug,frontend"
+  const mode = params.get("mode") || "any"
 
   useEffect(() => {
     const storedToken = localStorage.getItem('token');
@@ -65,10 +74,11 @@ function TasksPage() {
   };
 
   const { data: count = [], isLoading, isError } = useQuery({
-    queryKey: ["tasks"],
+    queryKey: ["tasks", { selectedTags }],//tagsParam, mode
     queryFn: async () => {
+      let params = selectedTags.length ? `?tags=${selectedTags.map(tag => tag.name).join(",")}&mode=${mode}` : "";
 
-      const response = await fetch("http://localhost:8005/tasks", {
+      const response = await fetch(`http://localhost:8001/tasks${params}`, {
         headers: {
           Authorization: `Bearer ${token}`
         }
@@ -80,7 +90,7 @@ function TasksPage() {
 
   const createTaskMutation = useMutation({
     mutationFn: async (newTask: { title: string; description: string }) => {
-      const response = await fetch("http://localhost:8005/tasks", {
+      const response = await fetch("http://localhost:8001/tasks", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -111,7 +121,7 @@ function TasksPage() {
 
   const updateTaskMutation = useMutation({
     mutationFn: async ({ id, task }: { id: number; task: { title: string; description: string } }) => {
-      const response = await fetch(`http://localhost:8005/tasks/${id}`, {
+      const response = await fetch(`http://localhost:8001/tasks/${id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -172,7 +182,7 @@ function TasksPage() {
         <h1 className="text-4xl font-bold text-gray-800 dark:text-white mb-8 text-center">
           Tiketi
         </h1>
-
+        <TaskFilters selectedTags={selectedTags} setSelectedTags={setSelectedTags} />
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {count.map((task: any) => (
            <Task key={task.id} task={task} onEdit={handleEditTask} />

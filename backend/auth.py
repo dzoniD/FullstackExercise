@@ -29,15 +29,12 @@ pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 def hash_password(password: str) -> str:
     # password = "test123"
     hashed = pwd_context.hash(password)
-    print("Hashed:!!!!!!!!!!!!!!!!!!!!!!", hashed)
-    print("Verify::!!!!!!!!!!!!!!!!!!!!!!", pwd_context.verify(password, hashed))
     return hashed
 
 def verify_password(password: str, hashed_password: str) -> bool:
     return pwd_context.verify(password, hashed_password)
 
 def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> User:
-    print("Token:!!!!!!!!!!!!!!!!!!!!!!", token)
     cred_exc = HTTPException(status_code=401,
     detail="Unauthorized",
     headers={"WWW-Authenticate": "Bearer"})

@@ -1,6 +1,13 @@
-from sqlalchemy import Column, Integer, Boolean, String, ForeignKey
+from sqlalchemy import Column, Integer, Boolean, String, ForeignKey, Table
 from sqlalchemy.orm import relationship
 from database import Base
+
+task_tags = Table(
+    "task_tags",
+    Base.metadata,
+    Column("task_id", ForeignKey("tasks.id"), primary_key=True),
+    Column("tag_id", ForeignKey("tags.id"), primary_key=True),
+)
 
 class User(Base):
     __tablename__ = "users"
@@ -24,3 +31,9 @@ class Task(Base):
     
     # Relation with User model
     owner = relationship("User", back_populates="tasks")
+    tags = relationship("Tag", secondary=task_tags, backref="tasks", lazy="joined")
+
+class Tag(Base):
+    __tablename__ = "tags"
+    id = Column(Integer, primary_key=True)
+    name = Column(String, unique=True, index=True)

@@ -11,6 +11,10 @@ from dotenv import load_dotenv
 from jose import jwt,JWTError
 from datetime import timedelta
 from email_utils import send_verification_email
+from sqlalchemy import func
+from typing import Optional, List
+from fastapi import Query
+from helper import get_or_create_tag
 
 
 # Učitaj environment varijable iz .env fajla
@@ -26,6 +30,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# models.Base.metadata.drop_all(bind=engine)
 models.Base.metadata.create_all(bind=engine)
 
 # Dependency to get DB session
@@ -40,6 +45,7 @@ models.Base.metadata.create_all(bind=engine)
 class TaskCreate(BaseModel):
     title: str
     description: str
+    tag_names: List[str] = []
 
 class UserCreate(BaseModel):
     email: str
@@ -55,12 +61,37 @@ class Token(BaseModel):
 
 
 @app.get("/tasks")
-def read_tasks(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+def read_tasks(tags: Optional[str] = Query(None, description="Comma separated tags"), mode: str = Query("any", enum=["any", "all"]),db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
     # Vrati samo taskove koji pripadaju trenutnom korisniku
     if not current_user.is_verified:
         from fastapi import HTTPException
         raise HTTPException(status_code=403, detail="Email not verified")
-    return db.query(models.Task).filter(models.Task.user_id == current_user.id).all()
+
+    tasks = db.query(models.Task).filter(models.Task.user_id == current_user.id)
+    print("Tags:!!!!!!!!!!!!!!!!!!!!!!", tags)
+    if tags:
+        tag_list = [t.strip() for t in tags.split(",") if t.strip()]
+
+        tasks = (tasks.join(models.Task.tags).filter(models.Tag.name.in_(tag_list)))
+
+        if mode == "all":
+            tasks = (tasks.group_by(models.Task.id).having(func.count(models.Tag.id) == len(tag_list)))
+        else:
+            tasks = tasks.distinct()
+
+    tasks.all()
+
+    return [
+        {
+            "id": t.id,
+            "title": t.title,
+            "description": t.description,
+            "tags": [tag.name for tag in t.tags],
+        }
+        for t in tasks
+    ]
+    
+
 
 @app.get("/tasks/{task_id}", tags=["tasks"], summary="Vraća pojedinačni task")
 def read_task(task_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user),):
@@ -89,10 +120,18 @@ def create_task(task: TaskCreate, db: Session = Depends(get_db), current_user: m
         description=task.description,
         user_id=current_user.id
     )
+
+    for name in task.tag_names:
+        new_task.tags.append(get_or_create_tag(name, db))
+
     db.add(new_task)
     db.commit()
     db.refresh(new_task)
     return new_task
+
+@app.get("/tags", tags=["tags"], summary="Get all tags")
+def get_tags(db:Session = Depends(get_db)):
+    return db.query(models.Tag).all();
 
 @app.put("/tasks/{task_id}", tags=["tasks"], summary="Ažurira postojeći task")
 def update_task(task_id: int, task: TaskCreate, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user),):

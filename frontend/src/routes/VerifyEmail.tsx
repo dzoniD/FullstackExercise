@@ -9,7 +9,7 @@ export default function SignIn() {
         const token = params.get("token")
         if (!token) return
     
-        fetch(`http://localhost:8005/auth/verify?token=${token}`)
+        fetch(`http://localhost:8001/auth/verify?token=${token}`)
           .then(res => res.json())
           .then((data) => {
             console.log(data)
