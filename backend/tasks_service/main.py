@@ -6,7 +6,6 @@ import models
 from database import get_db, engine
 import os
 from dotenv import load_dotenv
-from jose import jwt,JWTError
 from datetime import timedelta
 from sqlalchemy import func
 from typing import Optional, List
