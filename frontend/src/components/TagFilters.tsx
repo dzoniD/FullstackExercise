@@ -1,6 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 
+const TASKS_API_URL = import.meta.env.VITE_TASKS_API_URL || 'http://localhost:8002';
+
+
 export default function TaskFilters({ selectedTags, setSelectedTags }) {
     const [token, setToken] = useState<string | null>(null);
 
@@ -9,7 +12,7 @@ export default function TaskFilters({ selectedTags, setSelectedTags }) {
         queryKey: ["tags"],
         queryFn: async () => {
     
-          const response = await fetch(`http://localhost:8001/tags`, {
+          const response = await fetch(`${TASKS_API_URL}/tags`, {
             headers: {
               Authorization: `Bearer ${token}`
             }

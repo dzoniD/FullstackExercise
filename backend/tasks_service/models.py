@@ -11,15 +11,9 @@ task_tags = Table(
 
 class User(Base):
     __tablename__ = "users"
-
     id = Column(Integer, primary_key=True, index=True)
-    email = Column(String, unique=True, index=True)
-    hashed_password = Column(String)
-    role = Column(String, default="user")
-    is_verified = Column(Boolean, default=False)
-    
-    # Relation with Task model
     tasks = relationship("Task", back_populates="owner")
+    # Minimalna definicija za relationship
 
 class Task(Base):
     __tablename__ = "tasks"

@@ -2,11 +2,14 @@ import { useForm } from "react-hook-form";
 import { useMutation } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 
+const AUTH_API_URL = import.meta.env.VITE_AUTH_API_URL || 'http://localhost:8001';
+
+
 export default function SignIn() {
     const navigate = useNavigate();
     const signInMutation = useMutation({
         mutationFn: async (newUser) => {
-          const response = await fetch("http://localhost:8001/auth/signup", {
+          const response = await fetch(`${AUTH_API_URL}/auth/signup`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
